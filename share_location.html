@@ -65,7 +65,7 @@
   }
   function openWhatsApp(){
     const to=toInput.value.trim().replace(/\s|\+/g,'');
-    if(!to.match(/^\d{8,15}$/)){ alert('Enter the receiver number with country code (e.g., 91XXXXXXXXXX).'); toInput.focus(); return; }
+    if(!to.match(/^\d{8,15}$/)){ alert('Enter the receiver number with country code (e.g., 919740096978).'); toInput.focus(); return; }
     if(!coords){ alert('Location not ready yet. Please tap "Retry Location" and allow permission.'); return; }
     const msg=`✅ We’re safe\n🕰️ Time: ${formatDate(stamp)}\n📍 Coords: ${coords.lat}, ${coords.lon} (±${accuracy}m)\n🔗 https://maps.google.com/?q=${coords.lat},${coords.lon}`;
     const url='https://wa.me/'+encodeURIComponent(to)+'?text='+encodeURIComponent(msg);
