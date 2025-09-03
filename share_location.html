@@ -54,7 +54,7 @@
 
   function openWhatsApp(){
     if(!coords){ alert("Location not ready yet."); return; }
-    const msg=`✅ I'm safe\n🕰 ${formatDate(stamp)}\n📍 https://maps.google.com/?q=${coords.lat},${coords.lon}`;
+    const msg=`✅ We're safe\n🕰 ${formatDate(stamp)}\n📍 https://maps.google.com/?q=${coords.lat},${coords.lon}`;
     const url='https://wa.me/'+HARDCODED_NUMBER+'?text='+encodeURIComponent(msg);
     location.href=url;
   }
