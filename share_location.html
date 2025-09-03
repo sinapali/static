@@ -3,76 +3,63 @@
 <head>
 <meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
-<title>Press to Share Location</title>
+<title>Share Location</title>
 <style>
   :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-  body { margin: 0; padding: 24px; background:#f6f7fb; color:#111; }
-  .card { max-width: 720px; margin: 0 auto; background: #fff; border-radius: 16px;
-          box-shadow: 0 6px 24px rgba(0,0,0,.08); padding: 20px 20px 28px; }
-  h1 { font-size: clamp(22px,3.2vw,28px); margin: 6px 0 4px; }
-  p.lead { margin-top: 0; color:#333; }
-  .status { background:#f0f4ff; border-left: 4px solid #4a67ff; padding:10px 12px; border-radius: 8px; margin: 14px 0; }
-  button.primary { display:block; width:100%; margin-top:12px; padding:16px 18px; font-size:18px; font-weight:700;
-                   border:0; border-radius: 12px; background:#25D366; color:#fff; }
-  button.secondary { display:block; width:100%; margin-top:10px; padding:12px 14px; font-size:16px;
-                     border-radius:12px; border:1px solid #cfd7e3; background:#fff; }
-  .small { font-size: 12px; color:#666; }
-  .ok { color: #15803d; font-weight: 600; }
-  .warn { color:#b45309; font-weight:600; }
-  .err { color:#b91c1c; font-weight:600; }
-  .foot { margin-top:16px; font-size:12px; color:#666; }
+  body { margin: 0; padding: 24px; background:#f9fafb; color:#111; }
+  .card { max-width: 500px; margin: 0 auto; background: #fff; border-radius: 16px;
+          box-shadow: 0 6px 24px rgba(0,0,0,.08); padding: 32px 24px; text-align:center; }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  p { color:#555; font-size:15px; margin-bottom:20px; }
+  .status { margin-bottom: 16px; font-size:14px; color:#444; }
+  button.primary { display:block; width:100%; padding:18px; font-size:18px; font-weight:600;
+                   border:0; border-radius: 12px; background:#25D366; color:#fff; cursor:pointer; }
+  button.primary:disabled { background:#a7d8bb; cursor: not-allowed; }
+  .foot { margin-top:16px; font-size:12px; color:#777; }
 </style>
 </head>
 <body>
   <div class='card'>
-    <h1>✅ Press to Share Location</h1>
-    <p class='lead'>This will capture your current location and open WhatsApp with a ready message to send.</p>
+    <h1>✅ Share Location</h1>
+    <p>Press the button to send your current location via WhatsApp.</p>
     <div class='status' id='status'>Waiting for location permission…</div>
-    <button class='primary' id='sendBtn' disabled>Send Location on WhatsApp</button>
-    <button class='secondary' id='retryBtn'>Retry Location</button>
-    <div class='foot'>
-      <div id='preview' class='small'></div>
-      <p class='small'>Tip: If WhatsApp doesn’t open, your phone may ask which app to use. Choose WhatsApp and tap Send.</p>
-    </div>
+    <button class='primary' id='sendBtn' disabled>Send Location</button>
+    <div class='foot'>This will open WhatsApp with your location ready to send.</div>
   </div>
 
 <script>
 (function() {
   const sendBtn = document.getElementById('sendBtn');
-  const retryBtn = document.getElementById('retryBtn');
   const statusBox = document.getElementById('status');
-  const preview = document.getElementById('preview');
   const HARDCODED_NUMBER = "919740096978"; // your number
 
   let coords=null, accuracy=null, stamp=null;
 
-  function updateStatus(html, cls){ statusBox.innerHTML=html; statusBox.className='status '+(cls||''); }
+  function updateStatus(text){ statusBox.textContent=text; }
   function pad(n){ return (n<10?'0':'')+n; }
-  function formatDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
+  function formatDate(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes()); }
 
   function requestLocation(){
-    updateStatus('Requesting GPS… please tap <b>Allow</b> when asked.', 'warn');
-    coords=null; accuracy=null; stamp=null; sendBtn.disabled=true; preview.textContent='';
-    if(!navigator.geolocation){ updateStatus('Geolocation not supported on this device.', 'err'); return; }
+    updateStatus("📡 Getting location… please allow GPS.");
+    if(!navigator.geolocation){ updateStatus("❌ Geolocation not supported."); return; }
     navigator.geolocation.getCurrentPosition(function(pos){
-      const {latitude,longitude,accuracy:acc}=pos.coords;
-      coords={lat:latitude.toFixed(6),lon:longitude.toFixed(6)};
-      accuracy=Math.round(acc); stamp=new Date(); updateStatus('Location OK ✔️','ok');
-      const msg=`✅ I’m safe\\n🕰️ Time: ${formatDate(stamp)}\\n📍 Coords: ${coords.lat}, ${coords.lon}\\n±${accuracy}m\\n🔗 https://maps.google.com/?q=${coords.lat},${coords.lon}`;
-      preview.textContent='Preview:\\n'+msg; sendBtn.disabled=false;
-    }, function(err){ updateStatus('Could not get location ('+err.message+'). Please enable Location and try again.','err'); },
+      coords={lat:pos.coords.latitude.toFixed(6), lon:pos.coords.longitude.toFixed(6)};
+      accuracy=Math.round(pos.coords.accuracy); 
+      stamp=new Date();
+      updateStatus("✔️ Location ready.");
+      sendBtn.disabled=false;
+    }, function(err){ updateStatus("❌ Could not get location: "+err.message); },
     {enableHighAccuracy:true, timeout:15000, maximumAge:0});
   }
 
   function openWhatsApp(){
-    if(!coords){ alert('Location not ready yet. Please tap "Retry Location" and allow permission.'); return; }
-    const msg=`✅ I’m safe\\n🕰️ Time: ${formatDate(stamp)}\\n📍 Coords: ${coords.lat}, ${coords.lon} (±${accuracy}m)\\n🔗 https://maps.google.com/?q=${coords.lat},${coords.lon}`;
+    if(!coords){ alert("Location not ready yet."); return; }
+    const msg=`✅ I'm safe\n🕰 ${formatDate(stamp)}\n📍 https://maps.google.com/?q=${coords.lat},${coords.lon}`;
     const url='https://wa.me/'+HARDCODED_NUMBER+'?text='+encodeURIComponent(msg);
     location.href=url;
   }
 
   sendBtn.addEventListener('click', openWhatsApp);
-  retryBtn.addEventListener('click', requestLocation);
   requestLocation();
 })();
 </script>
