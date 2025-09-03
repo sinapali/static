@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Press to Share Location</title>
+<style>
+  :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  body { margin: 0; padding: 24px; background:#f6f7fb; color:#111; }
+  .card { max-width: 720px; margin: 0 auto; background: #fff; border-radius: 16px;
+          box-shadow: 0 6px 24px rgba(0,0,0,.08); padding: 20px 20px 28px; }
+  h1 { font-size: clamp(22px,3.2vw,28px); margin: 6px 0 4px; }
+  p.lead { margin-top: 0; color:#333; }
+  .status { background:#f0f4ff; border-left: 4px solid #4a67ff; padding:10px 12px; border-radius: 8px; margin: 14px 0; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  input[type=tel] { flex: 1 1 220px; padding:12px 14px; border-radius: 10px; border:1px solid #cfd7e3; font-size:16px; }
+  button.primary { display:block; width:100%; margin-top:12px; padding:16px 18px; font-size:18px; font-weight:700;
+                   border:0; border-radius: 12px; background:#25D366; color:#fff; }
+  button.secondary { display:block; width:100%; margin-top:10px; padding:12px 14px; font-size:16px;
+                     border-radius:12px; border:1px solid #cfd7e3; background:#fff; }
+  .small { font-size: 12px; color:#666; }
+  .ok { color: #15803d; font-weight: 600; }
+  .warn { color:#b45309; font-weight:600; }
+  .err { color:#b91c1c; font-weight:600; }
+  .foot { margin-top:16px; font-size:12px; color:#666; }
+</style></head>
+<body><div class='card'>
+<h1>✅ Press to Share Location</h1>
+<p class='lead'>This will capture your current location and open WhatsApp with a ready message to send.</p>
+<div class='status' id='status'>Waiting for location permission…</div>
+<div class='row'>
+  <label for='to' class='small'>Send to (country code + number, no +):</label>
+  <input id='to' type='tel' placeholder='919740096978' inputmode='numeric' autocomplete='tel'>
+</div>
+<button class='primary' id='sendBtn' disabled>Send Location on WhatsApp</button>
+<button class='secondary' id='retryBtn'>Retry Location</button>
+<div class='foot'>
+  <div id='preview' class='small'></div>
+  <p class='small'>Tip: If WhatsApp doesn’t open, your phone may ask which app to use. Choose WhatsApp and tap Send.</p>
+</div>
+</div>
+<script>
+(function() {
+  const qs = new URLSearchParams(location.search);
+  const toInput = document.getElementById('to');
+  const sendBtn = document.getElementById('sendBtn');
+  const retryBtn = document.getElementById('retryBtn');
+  const statusBox = document.getElementById('status');
+  const preview = document.getElementById('preview');
+  const preset = (qs.get('to') || '').replace(/\s|\+/g, '');
+  if (preset) toInput.value = preset;
+  let coords=null, accuracy=null, stamp=null;
+  function updateStatus(html, cls){ statusBox.innerHTML=html; statusBox.className='status '+(cls||''); }
+  function pad(n){ return (n<10?'0':'')+n; }
+  function formatDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
+  function requestLocation(){
+    updateStatus('Requesting GPS… please tap <b>Allow</b> when asked.', 'warn');
+    coords=null; accuracy=null; stamp=null; sendBtn.disabled=true; preview.textContent='';
+    if(!navigator.geolocation){ updateStatus('Geolocation not supported on this device.', 'err'); return; }
+    navigator.geolocation.getCurrentPosition(function(pos){
+      const {latitude,longitude,accuracy:acc}=pos.coords;
+      coords={lat:latitude.toFixed(6),lon:longitude.toFixed(6)};
+      accuracy=Math.round(acc); stamp=new Date(); updateStatus('Location OK ✔️','ok');
+      const msg=`✅ I’m safe\n🕰️ Time: ${formatDate(stamp)}\n📍 Coords: ${coords.lat}, ${coords.lon}\n±${accuracy}m\n🔗 https://maps.google.com/?q=${coords.lat},${coords.lon}`;
+      preview.textContent='Preview:\n'+msg; sendBtn.disabled=false;
+    }, function(err){ updateStatus('Could not get location ('+err.message+'). Please enable Location and try again.','err'); },
+    {enableHighAccuracy:true, timeout:15000, maximumAge:0});
+  }
+  function openWhatsApp(){
+    const to=toInput.value.trim().replace(/\s|\+/g,'');
+    if(!to.match(/^\d{8,15}$/)){ alert('Enter the receiver number with country code (e.g., 91XXXXXXXXXX).'); toInput.focus(); return; }
+    if(!coords){ alert('Location not ready yet. Please tap "Retry Location" and allow permission.'); return; }
+    const msg=`✅ We’re safe\n🕰️ Time: ${formatDate(stamp)}\n📍 Coords: ${coords.lat}, ${coords.lon} (±${accuracy}m)\n🔗 https://maps.google.com/?q=${coords.lat},${coords.lon}`;
+    const url='https://wa.me/'+encodeURIComponent(to)+'?text='+encodeURIComponent(msg);
+    location.href=url;
+  }
+  sendBtn.addEventListener('click', openWhatsApp);
+  retryBtn.addEventListener('click', requestLocation);
+  requestLocation();
+})();
+</script>
+</body></html>
